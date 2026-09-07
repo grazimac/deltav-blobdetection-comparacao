@@ -1,11 +1,13 @@
 import cv2 as cv
 from hexagon_detector import HexagonDetector
+from blob_detector import BlobDetection
 
 def main():
 
   captura= cv.VideoCapture(0, cv.CAP_V4L2)
 
-  detector=HexagonDetector()
+  detector_hex=HexagonDetector()
+  detector_blob=BlobDetection()
 
   while True:
 
@@ -16,8 +18,11 @@ def main():
       break
 
 
-    detection_result = detector.detect(frame)
-    cv.imshow('teste visao- deteccao hexagono',frame)
+    detections_hex = detector_hex.detect(frame)
+    detections_blob= detector_blob.detect(frame)
+
+    cv.imshow('teste visao- comparacao x blob ',frame)
+    
 
 
     if cv.waitKey(1) & 0xFF== ord('q'):

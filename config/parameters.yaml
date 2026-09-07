@@ -1,5 +1,17 @@
 hsv_mask:
   lower_red1: [0, 150, 100]
   upper_red1: [10, 255, 255]
-  lower_red2: [170,150,100]
+  lower_red2: [170, 150, 100]
   upper_red2: [180, 255, 255]
+
+
+blob_filters:
+  minThreshold: 10
+  maxThreshold: 255
+  thresholdStep: 200
+  minArea: 100
+  maxArea: 100000
+  minCircularity: 0.50
+  maxCircularity: 1.0
+  minConvexity: 0.70
+  maxConvexity: 1.0
