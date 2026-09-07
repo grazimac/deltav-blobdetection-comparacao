@@ -1,5 +1,5 @@
 import cv2 as cv
-from vision.detectors.hexagon_detector  import HexagonDetector
+from hexagon_detector import HexagonDetector
 
 def main():
 

@@ -1,0 +1,5 @@
+hsv_mask:
+  lower_red1: [0, 150, 100]
+  upper_red1: [10, 255, 255]
+  lower_red2: [170,150,100]
+  upper_red2: [180, 255, 255]

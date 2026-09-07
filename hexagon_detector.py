@@ -1,17 +1,43 @@
 
 import cv2 as cv
 import numpy as np
-from core.utils import load_yaml
-from .base_detector import BaseDetector, ModelsDetection
-from vision.utils.transformations import calculate_relative_error
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from typing import Generic, Optional, Tuple, TypeVar
+import yaml
 
-class HexagonDetector(BaseDetector):
+# base class for all detectors
+@dataclass
+class ModelsDetection:
+    model: str
+    class_id: int
+    class_label: str
+    conf: float
+    bbox: Tuple[int, int, int, int]   # (x, y, w, h)
+    center: Tuple[int, int]
+    rel_error: Tuple[float, float]
+    center_dist: Optional[Tuple[float, float]] = None
+    distance_m: Optional[float] = None
+
+def calculate_relative_error(
+    target_center: Tuple[int, int],
+    frame_shape: Tuple[int, int, int],
+) -> Tuple[float, float]:
+    """Calcula o erro normalizado do alvo em relação ao centro da imagem."""
+    height, width = frame_shape[:2]
+    center_x = width / 2.0
+    center_y = height / 2.0
+
+    error_x = (target_center[0] - center_x) / center_x
+    error_y = (center_y - target_center[1]) / center_y
+    return round(error_x, 6), round(error_y, 6)
+class HexagonDetector:
 
     DETECTION_TYPE = "HEXAGON"
 
-    def __init__(self): 
-        self.config = load_yaml("vision/config/hexagon.yaml")
-
+    def __init__(self,config_path="config/parameters.yaml"):
+        with open (config_path,'r') as f:
+            self.config=yaml.safe_load(f)
     ''' 
     Implemente aqui as funções auxiliares necessárias para a detecção.
     
@@ -19,16 +45,16 @@ class HexagonDetector(BaseDetector):
     destinam-se ao uso interno da classe.
     exemplo: def _nome_do_metodo(self, frame: np.ndarray): 
     '''
-    def _rgb_to_hsv (self,img_hsv):
-        return cv.cvtColor(img_hsv,cv.COLOR_BGR2HSV)
+    def _rgb_to_hsv (self,img_bgr):
+        return cv.cvtColor(img_bgr,cv.COLOR_BGR2HSV)
 
     def _red_mask(self,img_hsv):
 
-        claro1 = np.array([0, 150, 100])
-        escuro1 = np.array([10, 255, 255])
+        claro1 = np.array(self.config['hsv_mask']['lower_red1'])
+        escuro1 = np.array(self.config['hsv_mask']['upper_red1'])
     
-        claro2 = np.array([170, 150, 100])
-        escuro2 = np.array([180, 255, 255])    
+        claro2 = np.array(self.config['hsv_mask']['lower_red2'])
+        escuro2 = np.array(self.config['hsv_mask']['upper_red2'])    
     
         mascara1 = cv.inRange(img_hsv, claro1, escuro1)
         mascara2 = cv.inRange(img_hsv, claro2, escuro2)
@@ -43,11 +69,6 @@ class HexagonDetector(BaseDetector):
     
         return contornos
 
-    def _vertices (self, contornos):
-        for contorno in contornos:
-            perimetro = cv.arcLength(contorno, True)
-            vertices = cv.approxPolyDP(contorno,0.25*perimetro,True) #o número é a tolerância, quanto menor,mais rígido e acentua mais os detalhes
-            return vertices
 
 
     def detect(self, frame: np.ndarray) -> list[ModelsDetection]:
@@ -56,7 +77,6 @@ class HexagonDetector(BaseDetector):
         frame_hsv = self._rgb_to_hsv(frame)
         mascara = self._red_mask(frame_hsv)
         contornos =  self._find_red_contours(mascara)
-        vertices = self._vertices(contornos)
 
 
         for contorno in contornos:
@@ -85,9 +105,9 @@ class HexagonDetector(BaseDetector):
                         class_id=0,
                         class_label="hexagon",
                         conf=1.0, # valor fixo
-                        bbox=(x,y,w,h), #TODO: preencher
-                        center=(center_x,center_y), #TODO: preencher
-                        rel_error=rel_err #TODO: preencher - importe a função calculate_relative_error do arquivo em vision/utils/transformations.py para calcular o erro relativo
+                        bbox=(x,y,w,h), 
+                        center=(center_x,center_y), 
+                        rel_error=rel_err 
                     )
                 )
 
@@ -95,10 +115,7 @@ class HexagonDetector(BaseDetector):
 
 
 
-        #cv.imshow("frame",frame_hsv)
-        #cv.imshow("red_mask",mascara)
-        #cv.imshow("contornos",frame)     
-        #cv.waitKey(1)
+        
         
         ''' 
         Implemente aqui a lógica principal do detector.
